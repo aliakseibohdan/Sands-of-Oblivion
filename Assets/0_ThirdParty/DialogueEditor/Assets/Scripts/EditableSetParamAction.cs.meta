@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 3283ead54e4b63645825fa6146ace9ba
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 168329
+  packageName: Dialogue Editor
+  packageVersion: 1.1.07
+  assetPath: Assets/DialogueEditor/Assets/Scripts/EditableSetParamAction.cs
+  uploadId: 542877

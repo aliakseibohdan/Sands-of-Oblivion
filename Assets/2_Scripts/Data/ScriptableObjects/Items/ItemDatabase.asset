@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f619a2a5302f28341a1ba1722ad3e080, type: 3}
+  m_Name: ItemDatabase
+  m_EditorClassIdentifier: 
+  Items:
+  - ItemID: compass
+    DisplayName: Brass Compass
+    Description: A precision instrument for navigation. The needle trembles slightly.
+    IsInspectable: 1
+    Prefab3D: {fileID: 919132149155446097, guid: 56d82b8faed963641a361e57bce84a45, type: 3}
+    Icon: {fileID: 0}
+  - ItemID: kerma_tablet
+    DisplayName: Kerma Stone Tablet
+    Description: Ancient stone etched with mysterious glyphs.
+    IsInspectable: 1
+    Prefab3D: {fileID: 919132149155446097, guid: 6c2193c9127366c499a560873bed27f6, type: 3}
+    Icon: {fileID: 0}
+  - ItemID: journal
+    DisplayName: Field Journal
+    Description: Eleanor's personal observations and sketches.
+    IsInspectable: 0
+    Prefab3D: {fileID: 919132149155446097, guid: 5fa8b8080a1300c4bbda5d26617e7c48, type: 3}
+    Icon: {fileID: 0}

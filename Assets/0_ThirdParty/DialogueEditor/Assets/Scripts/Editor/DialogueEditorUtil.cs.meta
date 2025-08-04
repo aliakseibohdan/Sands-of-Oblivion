@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: bbffb6cf7db73f84797a1a37c413679c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 168329
+  packageName: Dialogue Editor
+  packageVersion: 1.1.07
+  assetPath: Assets/DialogueEditor/Assets/Scripts/Editor/DialogueEditorUtil.cs
+  uploadId: 542877

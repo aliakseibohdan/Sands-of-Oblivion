@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: ceee9f9ae9fc4af42a67980dfa43646f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 168329
+  packageName: Dialogue Editor
+  packageVersion: 1.1.07
+  assetPath: Assets/DialogueEditor/Assets/Scripts/Condition.cs
+  uploadId: 542877

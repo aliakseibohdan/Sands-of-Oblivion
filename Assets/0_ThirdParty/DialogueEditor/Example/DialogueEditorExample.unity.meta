@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 00b38229bafb02c4a94fdd3909ae00cf
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 168329
+  packageName: Dialogue Editor
+  packageVersion: 1.1.07
+  assetPath: Assets/DialogueEditor/Example/DialogueEditorExample.unity
+  uploadId: 542877
