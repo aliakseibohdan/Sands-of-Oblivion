@@ -1,0 +1,12 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/MainMenuStyle.uss?fileID=7433441132597879392&amp;guid=aa7b91722ffcf674f9af1276732a2031&amp;type=3#MainMenuStyle" />
+    <engine:VisualElement name="Container" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/3_Art/2D/Backgrounds/MainMenu/MainMenuRT.renderTexture?fileID=8400000&amp;guid=781b62857d0b90a4f97263914aa87eae&amp;type=2#MainMenuRT&quot;); background-color: rgba(0, 0, 0, 0);">
+        <engine:Label text="Eleanor Kingsley" name="Header" class="header" style="-unity-text-align: middle-center; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/Magenta%20Rose.ttf?fileID=12800000&amp;guid=217694acb506550429dcee3e779b4415&amp;type=3#Magenta Rose&quot;); text-shadow: 0 0 2px rgb(0, 0, 0); font-size: 70px;" />
+        <engine:Label text="and the" name="Header1" class="header" style="-unity-text-align: middle-center; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/RusticRoadway.otf?fileID=12800000&amp;guid=a4eec7f987124f440917981c28ac291f&amp;type=3#RusticRoadway&quot;); font-size: 60px; text-shadow: 0 0 2px rgb(0, 0, 0); height: auto; margin-top: 4px;" />
+        <engine:Label text="Sands of Oblivion&#10;" name="Header2" class="header" style="-unity-text-align: upper-center; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/AdzanSubuhDemoRegular.ttf?fileID=12800000&amp;guid=3ac72c94958f49f448f45edf04ad3901&amp;type=3#AdzanSubuhDemoRegular&quot;); font-size: 150px; height: 122px; color: rgb(244, 202, 62); text-shadow: 5px 0 0 rgb(244, 111, 62); -unity-text-outline-width: 0; margin-top: 4px;" />
+        <engine:Button text="New Expedition" name="NewGameButton" class="button" style="margin-top: 150px; justify-content: flex-start;" />
+        <engine:Button text="Resume Fieldwork" name="ContinueGameButton" class="button" />
+        <engine:Button text="Inspect the Gear" name="SettingsButton" class="button" />
+        <engine:Button text="Conclude Expedition" name="ExitButton" class="button" />
+    </engine:VisualElement>
+</engine:UXML>
