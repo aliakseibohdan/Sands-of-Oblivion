@@ -4,6 +4,31 @@
     -unity-text-align: upper-center;
 }
 
+.button:hover {
+    scale: 1.1 1.1;
+    color: rgb(226, 202, 118);
+}
+
+.toggle {
+    font-size: 60px;
+    -unity-font-definition: url("project://database/Assets/3_Art/Fonts/IM%20FELL%20DW%20Pica/IMFePIsc29P.ttf?fileID=12800000&guid=08d5eb81b2c6dbe44afeeae5a7908a8c&type=3#IMFePIsc29P");
+    align-self: center;
+    text-shadow: 4px 4px 20px rgb(0, 0, 0);
+    color: rgb(0, 0, 0);
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.slider {
+    margin-top: 0;
+    text-shadow: 4px 4px 20px rgb(0, 0, 0);
+    width: 1000px;
+    height: auto;
+    justify-content: flex-start;
+    align-content: auto;
+    align-self: center;
+}
+
 .button {
     width: 600px;
     height: 70px;
@@ -26,9 +51,29 @@
     transition-duration: 0.3s;
     -unity-text-outline-color: rgba(0, 0, 0, 0);
     -unity-text-outline-width: 0;
+    cursor: url("project://database/Assets/3_Art/2D/UI/Cursors/Caveman%20Rock--pointer--SweezyCursors.png?fileID=2800000&guid=269e09e77441a034b8d0c78f53e3dbc6&type=3#Caveman Rock--pointer--SweezyCursors");
+    visibility: visible;
+    opacity: 1;
 }
 
-.button:hover {
-    scale: 1.1 1.1;
-    color: rgb(255, 255, 255);
+.dropdown {
+    margin-top: 0;
+    -unity-font-definition: url("project://database/Assets/3_Art/Fonts/IM%20FELL%20DW%20Pica/IMFePIsc29P.ttf?fileID=12800000&guid=08d5eb81b2c6dbe44afeeae5a7908a8c&type=3#IMFePIsc29P");
+    font-size: 60px;
+    width: 1000px;
+    color: rgb(0, 0, 0);
+    text-shadow: 4px 4px 20px rgb(0, 0, 0);
+    align-self: center;
+}
+
+.menu-container {
+}
+
+.unity-base-field {
+}
+
+.unity-popup-field {
+}
+
+.unity-base-popup-field {
 }
