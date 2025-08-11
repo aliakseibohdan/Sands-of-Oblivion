@@ -322,7 +322,7 @@ public class InteractiveElement : MonoBehaviour, IPointerEnterHandler, IPointerE
             case InteractionType.OpenSubscene:
                 if (!string.IsNullOrEmpty(targetSubscene))
                 {
-                    GameManager.Instance.SceneManager.SwitchSubScene(targetSubscene);
+                    GameManager.Instance.SubsceneManager.SwitchSubScene(targetSubscene);
                 }
                 break;
 

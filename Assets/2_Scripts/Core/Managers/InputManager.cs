@@ -60,7 +60,7 @@ public class InputManager : MonoBehaviour
         _currentMap = _inputActions.Journal;
     }
 
-    private void DisableAllInput()
+    public void DisableAllInput()
     {
         _inputActions.Gameplay.Disable();
         _inputActions.Dialogue.Disable();

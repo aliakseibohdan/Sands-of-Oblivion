@@ -17,6 +17,9 @@ public class MainMenuEvents : MonoBehaviour
     private AudioSource _audioSource;
     [SerializeField] private AudioMixer _audioMixer;
 
+    [Header("Scene Management")]
+    [SerializeField] private SceneField _sceneToLoadFromNewGame;
+
     // Containers
     private UIDocument _document;
     private readonly Dictionary<string, VisualElement> _containers = new();
@@ -280,17 +283,27 @@ public class MainMenuEvents : MonoBehaviour
             {
                 switch (kvp.Key)
                 {
+                    case MenuButton.NewGame:
+
+                        SceneSwapManager.SwapScene(_sceneToLoadFromNewGame);
+                        break;
+
                     case MenuButton.Settings:
+
                         TriggerButtonEffect(MenuButton.Settings);
                         StartCoroutine(FadeElement(_buttons[MenuButton.Back], true));
                         ShowContainer("SettingsContainer", true, true, .35f);
                         ShowContainer("MainMenuContainer", false, true, .35f);
                         break;
+
                     case MenuButton.Exit:
+
                         TriggerButtonEffect(MenuButton.Exit);
                         StartCoroutine(QuitAfterDelay(2f));
                         break;
+
                     default:
+
                         TriggerButtonEffect(kvp.Key);
                         break;
                 }

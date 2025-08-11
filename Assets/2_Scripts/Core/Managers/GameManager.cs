@@ -5,11 +5,11 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [SerializeField] private SceneManager _sceneManager;
+    [SerializeField] private SubsceneManager _subsceneManager;
     [SerializeField] private SoundManager _soundManager;
     [SerializeField] private BackpackSystem _backpackSystem;
 
-    public SceneManager SceneManager => _sceneManager;
+    public SubsceneManager SubsceneManager => _subsceneManager;
     public SoundManager SoundManager => _soundManager;
     public BackpackSystem BackpackSystem => _backpackSystem;
 

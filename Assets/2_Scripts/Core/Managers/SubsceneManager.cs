@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class SceneManager : MonoBehaviour
+public class SubsceneManager : MonoBehaviour
 {
     [Header("Initialization Settings")]
     [SerializeField] private string _defaultSubscene = "Port Sudan";
