@@ -8,8 +8,6 @@ public class SceneSwapManager : MonoBehaviour
 
     private static bool _loadFromOtherScene;
 
-    private SceneField _sceneToLoad;
-
     private void Awake()
     {
         if (Instance == null)

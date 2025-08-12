@@ -6,7 +6,6 @@ public class SceneFadeManager : MonoBehaviour
 {
     public static SceneFadeManager instance;
 
-    public float FadeDuration = 1f;
     public FadeType CurrentFadeType;
 
     private readonly int _fadeAmount = Shader.PropertyToID("_FadeAmount");
@@ -31,6 +30,7 @@ public class SceneFadeManager : MonoBehaviour
 
     public bool IsFadingOut {  get; private set; }
     public bool IsFadingIn { get; private set; }
+    public float FadeDuration { get; set; }
 
     private void Awake()
     {

@@ -23,5 +23,5 @@
         <engine:Slider label="Dialogue volume" value="42" high-value="100" name="DialogueVolumeSlider" class="slider" style="font-size: 60px; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/IM%20FELL%20DW%20Pica/IMFePIsc29P.ttf?fileID=12800000&amp;guid=08d5eb81b2c6dbe44afeeae5a7908a8c&amp;type=3#IMFePIsc29P&quot;);" />
         <engine:Button text="Back" name="SettingsBackButton" class="button" style="margin-top: 10px;" />
     </engine:VisualElement>
-    <engine:VisualElement name="EffectsOverlay" picking-mode="Ignore" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/3_Art/2D/Effects/Shaders/HeatDistortion/HeatDistortionRT.renderTexture?fileID=8400000&amp;guid=e894fc745c5804e4690e5f3d83a3c494&amp;type=2#HeatDistortionRT&quot;); position: absolute; width: 100%; height: 100%;" />
+    <engine:VisualElement name="EffectsOverlay" picking-mode="Ignore" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/3_Art/2D/Effects/Shaders/HeatDistortion/EffectsRT.renderTexture?fileID=8400000&amp;guid=e894fc745c5804e4690e5f3d83a3c494&amp;type=2#EffectsRT&quot;); position: absolute; width: 100%; height: 100%; display: flex;" />
 </engine:UXML>

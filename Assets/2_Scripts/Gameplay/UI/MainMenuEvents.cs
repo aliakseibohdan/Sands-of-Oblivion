@@ -285,6 +285,8 @@ public class MainMenuEvents : MonoBehaviour
                 {
                     case MenuButton.NewGame:
 
+                        TriggerButtonEffect(MenuButton.NewGame);
+                        SceneFadeManager.instance.FadeDuration = 3f;
                         SceneSwapManager.SwapScene(_sceneToLoadFromNewGame);
                         break;
 
