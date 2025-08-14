@@ -4,13 +4,13 @@
     <engine:VisualElement name="MainMenuContainer" class="menu-container" style="flex-grow: 1; background-image: none; background-color: rgba(0, 0, 0, 0); visibility: visible; display: none; opacity: 0;">
         <engine:Label text="Eleanor Kingsley" name="Header" class="header" style="-unity-text-align: middle-center; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/Magenta%20Rose.ttf?fileID=12800000&amp;guid=217694acb506550429dcee3e779b4415&amp;type=3#Magenta Rose&quot;); text-shadow: 0 0 2px rgb(0, 0, 0); font-size: 70px;" />
         <engine:Label text="and the" name="Header1" class="header" style="-unity-text-align: middle-center; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/RusticRoadway.otf?fileID=12800000&amp;guid=a4eec7f987124f440917981c28ac291f&amp;type=3#RusticRoadway&quot;); font-size: 60px; text-shadow: 0 0 2px rgb(0, 0, 0); height: auto; margin-top: 4px;" />
-        <engine:Label text="Sands of Oblivion&#10;" name="Header2" class="header" style="-unity-text-align: upper-center; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/AdzanSubuhDemoRegular.ttf?fileID=12800000&amp;guid=3ac72c94958f49f448f45edf04ad3901&amp;type=3#AdzanSubuhDemoRegular&quot;); font-size: 150px; height: 122px; color: rgb(244, 202, 62); text-shadow: 5px 0 0 rgb(244, 111, 62); -unity-text-outline-width: 0; margin-top: 4px;" />
-        <engine:Button text="New Expedition" name="NewGameButton" class="button" style="margin-top: 150px; justify-content: flex-start; width: 450px;" />
+        <engine:Label text="Sands of Oblivion&#10;" name="Header2" class="header" style="-unity-text-align: upper-center; -unity-font-definition: url(&quot;project://database/Assets/3_Art/Fonts/AdzanSubuhDemoRegular.ttf?fileID=12800000&amp;guid=3ac72c94958f49f448f45edf04ad3901&amp;type=3#AdzanSubuhDemoRegular&quot;); font-size: 150px; height: 168px; color: rgb(244, 202, 62); text-shadow: 5px 0 0 rgb(244, 111, 62); -unity-text-outline-width: 0; margin-top: 4px; width: 1362px;" />
+        <engine:Button text="New Expedition" name="NewGameButton" class="button" style="margin-top: 115px;" />
         <engine:Button text="Resume Fieldwork" name="ContinueGameButton" class="button" style="width: 520px;" />
-        <engine:Button text="Inspect the Gear" name="SettingsButton" class="button" style="width: 480px;" />
+        <engine:Button text="Inspect the Gear" name="SettingsButton" class="button" style="width: 480px; display: flex; opacity: 1;" />
         <engine:Button text="Conclude Expedition" name="ExitButton" class="button" />
     </engine:VisualElement>
-    <engine:VisualElement name="SettingsContainer" class="menu-container" style="flex-grow: 1; position: absolute; width: 1920px; height: 1080px; display: none; opacity: 0;">
+    <engine:VisualElement name="SettingsContainer" class="menu-container" style="flex-grow: 1; position: absolute; width: 1920px; height: 1080px; display: none; opacity: 1;">
         <engine:DropdownField label="Graphics quality" name="QualityDropdown" class="dropdown" style="margin-top: 60px; width: 1000px; height: auto;" />
         <engine:DropdownField label="Resolution " name="ResolutionDropdown" class="dropdown" />
         <engine:Toggle label="Fullscreen" name="FullscreenToggle" class="toggle" />
