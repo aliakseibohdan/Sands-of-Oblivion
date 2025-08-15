@@ -3,9 +3,31 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEditor.Progress;
 
 public class BackpackUIController : MonoBehaviour
 {
+    [Header("Rendering Setup")]
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private LayerMask backpackItemLayer;
+    [SerializeField] private Vector3 defaultItemRotation = new(-15, 30, 0);
+    private int backpackItemLayerIndex;
+
+    [Header("ViewSettings")]
+    [SerializeField] private float rotationDuration = 0.5f;
+    [SerializeField] private float radius = 2f;
+    [SerializeField] private float grayedAlpha = 0.5f;
+
+    [Header("Inspection Settings")]
+    [SerializeField] private float inspectionTransitionDuration = 0.5f;
+    [SerializeField] private Vector3 inspectionScale = Vector3.one * 3f;
+    [SerializeField] private float rotationSensitivity = 3f;
+    private GameObject currentInspectionItem;
+    private Vector3 originalItemPosition;
+    private Quaternion originalItemRotation;
+    private Vector3 originalItemScale;
+    private Transform originalItemParent;
+
     [Header("References")]
     [SerializeField] private CanvasGroup backpackCanvas;
     [SerializeField] private Transform itemContainer;
@@ -14,22 +36,17 @@ public class BackpackUIController : MonoBehaviour
     [SerializeField] private Button inspectButton;
     [SerializeField] private Button leftArrow;
     [SerializeField] private Button rightArrow;
-    [SerializeField] private Camera renderCamera;
-    [SerializeField] private Transform inspectionContainer;
+    [SerializeField] private RawImage itemRenderImage;
+    [SerializeField] private RenderTexture itemRenderTexture;
     [SerializeField] private CanvasGroup inspectionOverlay;
-
-    [Header("Settings")]
-    [SerializeField] private float rotationDuration = 0.5f;
-    [SerializeField] private float radius = 2f;
-    [SerializeField] private float grayedAlpha = 0.5f;
 
     private Backpack backpack;
     private ItemDatabase itemDatabase;
+    private Camera renderCamera;
     private readonly Dictionary<string, GameObject> spawnedItems = new();
     private List<string> currentItems = new();
     private int selectedIndex = 0;
     private bool isRotating = false;
-    private readonly Dictionary<string, Quaternion> inspectionRotations = new();
     private float currentZoom = 2f;
     private const float minZoom = 0.5f;
     private const float maxZoom = 5f;
@@ -39,16 +56,101 @@ public class BackpackUIController : MonoBehaviour
         backpack = FindAnyObjectByType<Backpack>();
         itemDatabase = Resources.Load<ItemDatabase>("ItemDatabase");
 
-        // Initialize UI
+        backpackItemLayerIndex = GetFirstLayerFromMask(backpackItemLayer);
+        if (backpackItemLayerIndex == -1)
+        {
+            Debug.LogError($"No valid layer found in LayerMask '{backpackItemLayer.value}'. Using default layer.");
+            backpackItemLayerIndex = 0;
+        }
+
+        if (renderCamera == null)
+        {
+            CreateRenderCamera();
+        }
+
         backpackCanvas.alpha = 0;
         backpackCanvas.blocksRaycasts = false;
         inspectionOverlay.alpha = 0;
         inspectionOverlay.blocksRaycasts = false;
 
-        // Setup button listeners
         leftArrow.onClick.AddListener(() => RotateItems(-1));
         rightArrow.onClick.AddListener(() => RotateItems(1));
         inspectButton.onClick.AddListener(EnterInspectionMode);
+    }
+
+    private int GetFirstLayerFromMask(LayerMask layerMask)
+    {
+        int mask = layerMask.value;
+        if (mask == 0) return 0;
+
+        for (int i = 0; i < 32; i++)
+        {
+            if ((mask & (1 << i)) != 0)
+            {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private void Update()
+    {
+        if (inspectionOverlay.blocksRaycasts)
+        {
+            HandleInspectionInput();
+            return;
+        }
+
+        if (backpackCanvas.blocksRaycasts && Input.GetMouseButtonDown(1))
+        {
+            ToggleBackpack();
+        }
+
+        if (backpackCanvas.blocksRaycasts)
+        {
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                RotateItems(-1);
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                RotateItems(1);
+            }
+            else if (Input.GetKeyDown(KeyCode.Return) && inspectButton.interactable)
+            {
+                EnterInspectionMode();
+            }
+        }
+    }
+
+
+    private void CreateRenderCamera()
+    {
+        GameObject cameraGO = new("BackpackRenderCamera");
+        cameraGO.transform.SetParent(itemContainer);
+        cameraGO.transform.SetLocalPositionAndRotation(new Vector3(0, 0.5f, -2f), Quaternion.Euler(0f, 0, 0));
+
+        renderCamera = cameraGO.AddComponent<Camera>();
+        renderCamera.clearFlags = CameraClearFlags.SolidColor;
+        renderCamera.backgroundColor = Color.clear;
+
+        renderCamera.orthographic = true;
+        renderCamera.orthographicSize = 2f;
+        renderCamera.depth = 0;
+        renderCamera.cullingMask = 1 << backpackItemLayerIndex;
+        renderCamera.nearClipPlane = -100f;
+
+        if (itemRenderTexture == null)
+        {
+            itemRenderTexture = new RenderTexture(512, 512, 24);
+            itemRenderTexture.Create();
+        }
+        renderCamera.targetTexture = itemRenderTexture;
+
+        if (itemRenderImage != null)
+        {
+            itemRenderImage.texture = itemRenderTexture;
+        }
     }
 
     public void ToggleBackpack()
@@ -62,6 +164,10 @@ public class BackpackUIController : MonoBehaviour
         if (willOpen)
         {
             RefreshBackpackContents();
+        }
+        else
+        {
+            if (renderCamera != null) renderCamera.enabled = false;
         }
     }
 
@@ -80,25 +186,30 @@ public class BackpackUIController : MonoBehaviour
         }
 
         backpackCanvas.alpha = targetAlpha;
+
+        if (renderCamera != null)
+        {
+            renderCamera.enabled = show && currentItems.Count > 0;
+        }
     }
 
     private void RefreshBackpackContents()
     {
-        // Clear existing items
         foreach (Transform child in itemContainer)
         {
-            Destroy(child.gameObject);
+            if (child != renderCamera?.transform)
+                Destroy(child.gameObject);
         }
         spawnedItems.Clear();
 
-        // Update UI state
-        renderCamera.enabled = currentItems.Count > 0;
-
-        // Get current items
         currentItems = backpack.GetItems();
         selectedIndex = currentItems.Count > 0 ? currentItems.Count - 1 : -1;
 
-        // Handle empty backpack
+        if (renderCamera != null)
+        {
+            renderCamera.enabled = currentItems.Count > 0;
+        }
+
         if (currentItems.Count == 0)
         {
             itemTitle.text = "Empty Hands";
@@ -109,7 +220,6 @@ public class BackpackUIController : MonoBehaviour
             return;
         }
 
-        // Position items in circular layout
         float angleStep = 360f / currentItems.Count;
         for (int i = 0; i < currentItems.Count; i++)
         {
@@ -119,19 +229,26 @@ public class BackpackUIController : MonoBehaviour
             if (config != null && config.Prefab3D != null)
             {
                 Vector3 position = CalculateCircularPosition(i, angleStep);
-                Quaternion rotation = Quaternion.Euler(0, -angleStep * i, 0);
+                Quaternion rotation = Quaternion.Euler(defaultItemRotation);
                 GameObject item = Instantiate(config.Prefab3D, position, rotation, itemContainer);
 
-                // Set item appearance
+                item.transform.localScale = Vector3.one * 5f;
+                item.transform.localPosition += new Vector3(0, renderCamera.transform.position.y, 0);
+
                 SetItemAppearance(item, i == selectedIndex);
+                SetLayerRecursive(item, backpackItemLayerIndex);
                 spawnedItems.Add(itemID, item);
             }
         }
 
-        // Update UI state
         UpdateSelectedItemUI();
         leftArrow.interactable = currentItems.Count > 1;
         rightArrow.interactable = currentItems.Count > 1;
+
+        if (renderCamera != null && renderCamera.enabled)
+        {
+            renderCamera.Render();
+        }
     }
 
     private Vector3 CalculateCircularPosition(int index, float angleStep)
@@ -140,15 +257,31 @@ public class BackpackUIController : MonoBehaviour
         return new Vector3(Mathf.Sin(angle) * radius, 0, Mathf.Cos(angle) * radius);
     }
 
+    private void SetLayerRecursive(GameObject obj, int layerIndex)
+    {
+        obj.layer = layerIndex;
+        foreach (Transform child in obj.transform)
+        {
+            SetLayerRecursive(child.gameObject, layerIndex);
+        }
+    }
+
     private void SetItemAppearance(GameObject item, bool isSelected)
     {
         Renderer[] renderers = item.GetComponentsInChildren<Renderer>();
         foreach (Renderer r in renderers)
         {
-            Material mat = r.material;
-            Color color = mat.color;
-            color.a = isSelected ? 1f : grayedAlpha;
-            mat.color = color;
+            MaterialPropertyBlock propBlock = new();
+            r.GetPropertyBlock(propBlock);
+
+            propBlock.SetColor("_Color", isSelected ? Color.white : new Color(1, 1, 1, grayedAlpha));
+
+            if (r.sharedMaterial.shader.name.Contains("Unlit"))
+            {
+                propBlock.SetColor("_BaseColor", isSelected ? Color.white : new Color(1, 1, 1, grayedAlpha));
+            }
+
+            r.SetPropertyBlock(propBlock);
         }
     }
 
@@ -178,11 +311,9 @@ public class BackpackUIController : MonoBehaviour
         leftArrow.interactable = false;
         rightArrow.interactable = false;
 
-        // Calculate new positions
         int newIndex = (selectedIndex + direction + currentItems.Count) % currentItems.Count;
         float angleStep = 360f / currentItems.Count;
 
-        // Store initial positions
         Dictionary<string, Vector3> startPositions = new();
         foreach (string itemID in currentItems)
         {
@@ -192,7 +323,6 @@ public class BackpackUIController : MonoBehaviour
             }
         }
 
-        // Calculate target positions
         Dictionary<string, Vector3> targetPositions = new();
         for (int i = 0; i < currentItems.Count; i++)
         {
@@ -200,7 +330,6 @@ public class BackpackUIController : MonoBehaviour
             targetPositions[currentItems[i]] = CalculateCircularPosition(newPositionIndex, angleStep);
         }
 
-        // Animate movement
         float elapsed = 0;
         while (elapsed < rotationDuration)
         {
@@ -221,7 +350,6 @@ public class BackpackUIController : MonoBehaviour
             yield return null;
         }
 
-        // Finalize positions
         foreach (string itemID in currentItems)
         {
             if (spawnedItems.ContainsKey(itemID))
@@ -230,7 +358,6 @@ public class BackpackUIController : MonoBehaviour
             }
         }
 
-        // Update selection
         selectedIndex = newIndex;
         foreach (var kvp in spawnedItems)
         {
@@ -250,33 +377,137 @@ public class BackpackUIController : MonoBehaviour
         string itemID = currentItems[selectedIndex];
         ItemDatabase.ItemConfig config = itemDatabase.GetItem(itemID);
 
-        if (!config.IsInspectable) return;
+        if (!config.IsInspectable || !spawnedItems.ContainsKey(itemID)) return;
 
-        // Create or position inspection item
-        GameObject inspectionItem;
-        if (!spawnedItems.ContainsKey(itemID + "_inspection"))
-        {
-            inspectionItem = Instantiate(config.Prefab3D, inspectionContainer);
-            inspectionItem.name = config.ItemID + "_inspection";
+        currentInspectionItem = spawnedItems[itemID];
 
-            // Initialize rotation if needed
-            if (!inspectionRotations.ContainsKey(itemID))
-            {
-                inspectionRotations[itemID] = Quaternion.identity;
-            }
-        }
-        else
-        {
-            inspectionItem = spawnedItems[itemID + "_inspection"];
-        }
+        originalItemPosition = currentInspectionItem.transform.localPosition;
+        originalItemRotation = currentInspectionItem.transform.localRotation;
+        originalItemScale = currentInspectionItem.transform.localScale;
+        originalItemParent = currentInspectionItem.transform.parent;
 
-        inspectionItem.transform.localPosition = Vector3.zero;
-        inspectionItem.transform.localRotation = inspectionRotations[itemID];
-        inspectionItem.transform.localScale = Vector3.one * 2f;
+        currentInspectionItem.transform.SetParent(itemContainer, true);
 
-        // Show inspection overlay
+        StartCoroutine(AnimateToInspection());
+
         inspectionOverlay.blocksRaycasts = true;
         StartCoroutine(FadeInspectionOverlay(true));
+    }
+
+    private IEnumerator AnimateToInspection()
+    {
+        Vector3 targetPosition = Vector3.forward * -2f;
+        targetPosition.y = renderCamera.transform.position.y;
+        Quaternion targetRotation = Quaternion.Euler(defaultItemRotation);
+
+        float elapsed = 0;
+        while (elapsed < inspectionTransitionDuration)
+        {
+            float t = elapsed / inspectionTransitionDuration;
+            currentInspectionItem.transform.SetLocalPositionAndRotation(Vector3.Lerp(
+                originalItemPosition,
+                targetPosition,
+                t
+            ), Quaternion.Lerp(
+                originalItemRotation,
+                targetRotation,
+                t
+            ));
+            currentInspectionItem.transform.localScale = Vector3.Lerp(
+                originalItemScale,
+                inspectionScale,
+                t
+            );
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        currentInspectionItem.transform.SetLocalPositionAndRotation(targetPosition, targetRotation);
+        currentInspectionItem.transform.localScale = inspectionScale;
+
+        foreach (var item in spawnedItems.Values)
+        {
+            if (item != currentInspectionItem)
+            {
+                SetItemAppearance(item, false);
+            }
+        }
+    }
+
+    private void ExitInspectionMode()
+    {
+        if (currentInspectionItem == null) return;
+
+        StartCoroutine(AnimateFromInspection());
+        StartCoroutine(FadeInspectionOverlay(false));
+    }
+
+    private IEnumerator AnimateFromInspection()
+    {
+        currentInspectionItem.transform.GetLocalPositionAndRotation(out Vector3 startPosition, out Quaternion startRotation);
+        Vector3 startScale = currentInspectionItem.transform.localScale;
+
+        float elapsed = 0;
+        while (elapsed < inspectionTransitionDuration)
+        {
+            float t = elapsed / inspectionTransitionDuration;
+            currentInspectionItem.transform.SetLocalPositionAndRotation(Vector3.Lerp(
+                startPosition,
+                originalItemPosition,
+                t
+            ), Quaternion.Lerp(
+                startRotation,
+                originalItemRotation,
+                t
+            ));
+            currentInspectionItem.transform.localScale = Vector3.Lerp(
+                startScale,
+                originalItemScale,
+                t
+            );
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        currentInspectionItem.transform.SetParent(originalItemParent, true);
+        currentInspectionItem.transform.SetLocalPositionAndRotation(originalItemPosition, originalItemRotation);
+        currentInspectionItem.transform.localScale = originalItemScale;
+
+        foreach (var kvp in spawnedItems)
+        {
+            SetItemAppearance(kvp.Value, kvp.Key == currentItems[selectedIndex]);
+        }
+
+        currentInspectionItem = null;
+        inspectionOverlay.blocksRaycasts = false;
+    }
+
+    private void HandleInspectionInput()
+    {
+        if (currentInspectionItem == null) return;
+
+        if (Input.GetMouseButton(0))
+        {
+            float rotX = Input.GetAxis("Mouse X") * rotationSensitivity;
+            float rotY = Input.GetAxis("Mouse Y") * rotationSensitivity;
+
+            currentInspectionItem.transform.Rotate(Vector3.up, -rotX, Space.World);
+            currentInspectionItem.transform.Rotate(Vector3.right, rotY, Space.World);
+        }
+
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll != 0)
+        {
+            currentZoom = Mathf.Clamp(currentZoom + scroll, minZoom, maxZoom);
+            currentInspectionItem.transform.localScale = inspectionScale * currentZoom;
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            ExitInspectionMode();
+        }
     }
 
     private IEnumerator FadeInspectionOverlay(bool show)
@@ -294,70 +525,5 @@ public class BackpackUIController : MonoBehaviour
         }
 
         inspectionOverlay.alpha = targetAlpha;
-    }
-
-    private void ExitInspectionMode()
-    {
-        string itemID = currentItems[selectedIndex];
-
-        // Save current rotation
-        if (spawnedItems.ContainsKey(itemID + "_inspection"))
-        {
-            inspectionRotations[itemID] = spawnedItems[itemID + "_inspection"].transform.localRotation;
-        }
-
-        // Hide inspection overlay
-        inspectionOverlay.blocksRaycasts = false;
-        StartCoroutine(FadeInspectionOverlay(false));
-    }
-
-    private void Update()
-    {
-        HandleInspectionInput();
-        HandleBackpackClosing();
-    }
-
-    private void HandleInspectionInput()
-    {
-        if (inspectionOverlay.blocksRaycasts)
-        {
-            // Rotation
-            if (Input.GetMouseButton(0))
-            {
-                float rotX = Input.GetAxis("Mouse X") * 3f;
-                float rotY = Input.GetAxis("Mouse Y") * 3f;
-
-                string itemID = currentItems[selectedIndex];
-                if (spawnedItems.ContainsKey(itemID + "_inspection"))
-                {
-                    Transform item = spawnedItems[itemID + "_inspection"].transform;
-                    item.Rotate(Vector3.up, -rotX, Space.World);
-                    item.Rotate(Vector3.right, rotY, Space.World);
-                }
-            }
-
-            // Zoom
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (scroll != 0)
-            {
-                currentZoom = Mathf.Clamp(currentZoom - scroll, minZoom, maxZoom);
-                inspectionContainer.localPosition = new Vector3(0, 0, -currentZoom);
-            }
-
-            // Exit on RMB
-            if (Input.GetMouseButtonDown(1))
-            {
-                ExitInspectionMode();
-            }
-        }
-    }
-
-    private void HandleBackpackClosing()
-    {
-        // Close backpack with RMB when it's open but inspection is not active
-        if (backpackCanvas.blocksRaycasts && !inspectionOverlay.blocksRaycasts && Input.GetMouseButtonDown(1))
-        {
-            ToggleBackpack();
-        }
     }
 }
