@@ -282,15 +282,21 @@ MonoBehaviour:
   backpackItemLayer:
     serializedVersion: 2
     m_Bits: 64
-  defaultItemRotation: {x: 0, y: -90, z: 0}
+  defaultItemRotation: {x: 0, y: 0, z: 0}
   rotationDuration: 0.5
   radius: 2
   grayedAlpha: 0.5
   inspectionTransitionDuration: 0.5
   inspectionScale: {x: 8, y: 8, z: 8}
   rotationSensitivity: 10
+  textFadeDuration: 0.2
+  buttonHoverScale: 1.2
+  buttonHoverDuration: 0.2
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.98039216}
+  overlayMaterial: {fileID: 0}
   backpackCanvas: {fileID: 1576141462}
   itemContainer: {fileID: 2118073485}
+  cameraContainer: {fileID: 0}
   itemTitle: {fileID: 1196211592}
   itemDescription: {fileID: 1161171555}
   inspectButton: {fileID: 2146173209}
@@ -1373,7 +1379,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.9019608}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.98039216}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2175,7 +2181,7 @@ CanvasGroup:
   m_GameObject: {fileID: 1418596486}
   m_Enabled: 1
   m_Alpha: 1
-  m_Interactable: 1
+  m_Interactable: 0
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
 --- !u!1 &1528117465

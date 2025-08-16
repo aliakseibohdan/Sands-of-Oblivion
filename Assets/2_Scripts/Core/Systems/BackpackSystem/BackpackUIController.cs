@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static UnityEditor.Progress;
 
 public class BackpackUIController : MonoBehaviour
 {
@@ -17,6 +17,7 @@ public class BackpackUIController : MonoBehaviour
     [SerializeField] private float rotationDuration = 0.5f;
     [SerializeField] private float radius = 2f;
     [SerializeField] private float grayedAlpha = 0.5f;
+    private float currentRotationAngle = 0f;
 
     [Header("Inspection Settings")]
     [SerializeField] private float inspectionTransitionDuration = 0.5f;
@@ -28,9 +29,24 @@ public class BackpackUIController : MonoBehaviour
     private Vector3 originalItemScale;
     private Transform originalItemParent;
 
+    [Header("UI Settings")]
+    [SerializeField] private float textFadeDuration = 0.2f;
+
+    [Header("Button Settings")]
+    [SerializeField] private float buttonHoverScale = 1.2f;
+    [SerializeField] private float buttonHoverDuration = 0.2f;
+    private Dictionary<Button, Vector3> buttonOriginalScales = new();
+    private Button[] allButtons;
+
+    [Header("Overlay Settings")]
+    [SerializeField] private Color overlayColor = new(0.1f, 0.1f, 0.1f, 0.8f);
+    [SerializeField] private Material overlayMaterial;
+
+
     [Header("References")]
     [SerializeField] private CanvasGroup backpackCanvas;
     [SerializeField] private Transform itemContainer;
+    [SerializeField] private Transform cameraContainer;
     [SerializeField] private TextMeshProUGUI itemTitle;
     [SerializeField] private TextMeshProUGUI itemDescription;
     [SerializeField] private Button inspectButton;
@@ -63,6 +79,15 @@ public class BackpackUIController : MonoBehaviour
             backpackItemLayerIndex = 0;
         }
 
+        if (cameraContainer == null)
+        {
+            GameObject cameraContainerGO = new("CameraContainer");
+            cameraContainer = cameraContainerGO.transform;
+            cameraContainer.SetParent(transform);
+            cameraContainer.localPosition = Vector3.zero;
+            cameraContainer.localRotation = Quaternion.identity;
+        }
+
         if (renderCamera == null)
         {
             CreateRenderCamera();
@@ -76,6 +101,75 @@ public class BackpackUIController : MonoBehaviour
         leftArrow.onClick.AddListener(() => RotateItems(-1));
         rightArrow.onClick.AddListener(() => RotateItems(1));
         inspectButton.onClick.AddListener(EnterInspectionMode);
+
+        allButtons = new Button[] { leftArrow, rightArrow, inspectButton };
+        foreach (Button button in allButtons)
+        {
+            buttonOriginalScales[button] = button.transform.localScale;
+
+            EventTrigger trigger = button.gameObject.AddComponent<EventTrigger>();
+
+            EventTrigger.Entry entryEnter = new()
+            {
+                eventID = EventTriggerType.PointerEnter
+            };
+            entryEnter.callback.AddListener((data) => { OnButtonPointerEnter(button); });
+            trigger.triggers.Add(entryEnter);
+
+            EventTrigger.Entry entryExit = new()
+            {
+                eventID = EventTriggerType.PointerExit
+            };
+            entryExit.callback.AddListener((data) => { OnButtonPointerExit(button); });
+            trigger.triggers.Add(entryExit);
+        }
+    }
+
+    private void OnButtonPointerEnter(Button button)
+    {
+        if (!button.interactable) return;
+        StopAllCoroutinesForButton(button);
+        StartCoroutine(ScaleButton(button, buttonOriginalScales[button] * buttonHoverScale));
+    }
+
+    private void OnButtonPointerExit(Button button)
+    {
+        StopAllCoroutinesForButton(button);
+        StartCoroutine(ScaleButton(button, buttonOriginalScales[button]));
+    }
+
+    private void StopAllCoroutinesForButton(Button button)
+    {
+        StopCoroutine("ScaleButton_" + button.GetInstanceID());
+    }
+
+    private IEnumerator ScaleButton(Button button, Vector3 targetScale)
+    {
+        string coroutineName = "ScaleButton_" + button.GetInstanceID();
+
+        Vector3 startScale = button.transform.localScale;
+        float elapsed = 0;
+
+        while (elapsed < buttonHoverDuration)
+        {
+            float t = elapsed / buttonHoverDuration;
+            button.transform.localScale = Vector3.Lerp(startScale, targetScale, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        button.transform.localScale = targetScale;
+    }
+
+    private void SetButtonState(Button button, bool interactable)
+    {
+        button.interactable = interactable;
+
+        if (!interactable && button.transform.localScale != buttonOriginalScales[button])
+        {
+            StopAllCoroutinesForButton(button);
+            button.transform.localScale = buttonOriginalScales[button];
+        }
     }
 
     private int GetFirstLayerFromMask(LayerMask layerMask)
@@ -127,8 +221,8 @@ public class BackpackUIController : MonoBehaviour
     private void CreateRenderCamera()
     {
         GameObject cameraGO = new("BackpackRenderCamera");
-        cameraGO.transform.SetParent(itemContainer);
-        cameraGO.transform.SetLocalPositionAndRotation(new Vector3(0, 0.5f, -2f), Quaternion.Euler(0f, 0, 0));
+        cameraGO.transform.SetParent(cameraContainer);
+        cameraGO.transform.SetLocalPositionAndRotation(new Vector3(0, 0.5f, -2f), Quaternion.identity);
 
         renderCamera = cameraGO.AddComponent<Camera>();
         renderCamera.clearFlags = CameraClearFlags.SolidColor;
@@ -136,7 +230,7 @@ public class BackpackUIController : MonoBehaviour
 
         renderCamera.orthographic = true;
         renderCamera.orthographicSize = 2f;
-        renderCamera.depth = 0;
+        renderCamera.depth = 100;
         renderCamera.cullingMask = 1 << backpackItemLayerIndex;
         renderCamera.nearClipPlane = -100f;
 
@@ -197,10 +291,12 @@ public class BackpackUIController : MonoBehaviour
     {
         foreach (Transform child in itemContainer)
         {
-            if (child != renderCamera?.transform)
-                Destroy(child.gameObject);
+            Destroy(child.gameObject);
         }
         spawnedItems.Clear();
+
+        currentRotationAngle = 0f;
+        itemContainer.localRotation = Quaternion.identity;
 
         currentItems = backpack.GetItems();
         selectedIndex = currentItems.Count > 0 ? currentItems.Count - 1 : -1;
@@ -214,9 +310,9 @@ public class BackpackUIController : MonoBehaviour
         {
             itemTitle.text = "Empty Hands";
             itemDescription.text = "The weight of possibilities hangs light, awaiting discoveries yet unseen...";
-            inspectButton.interactable = false;
-            leftArrow.interactable = false;
-            rightArrow.interactable = false;
+            SetButtonState(inspectButton, false);
+            SetButtonState(leftArrow, false);
+            SetButtonState(rightArrow, false);
             return;
         }
 
@@ -229,8 +325,18 @@ public class BackpackUIController : MonoBehaviour
             if (config != null && config.Prefab3D != null)
             {
                 Vector3 position = CalculateCircularPosition(i, angleStep);
-                Quaternion rotation = Quaternion.Euler(defaultItemRotation);
+
+                Vector3 rotationEuler = config.DefaultRotation != Vector3.zero ?
+                config.DefaultRotation :
+                defaultItemRotation;
+
+                Quaternion rotation = Quaternion.Euler(rotationEuler);
+
                 GameObject item = Instantiate(config.Prefab3D, position, rotation, itemContainer);
+
+                Vector3 lookDirection = -item.transform.localPosition.normalized;
+                Quaternion lookRotation = Quaternion.LookRotation(lookDirection);
+                item.transform.localRotation = lookRotation * Quaternion.Euler(rotationEuler);
 
                 item.transform.localScale = Vector3.one * 5f;
                 item.transform.localPosition += new Vector3(0, renderCamera.transform.position.y, 0);
@@ -295,7 +401,27 @@ public class BackpackUIController : MonoBehaviour
             itemTitle.text = config.DisplayName;
             itemDescription.text = config.Description;
             inspectButton.interactable = config.IsInspectable;
+
+            StartCoroutine(PulseItem(spawnedItems[itemID]));
         }
+    }
+
+    private IEnumerator PulseItem(GameObject item)
+    {
+        float duration = 0.3f;
+        float elapsed = 0;
+        Vector3 originalScale = item.transform.localScale;
+
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            float scale = Mathf.Lerp(1.1f, 1f, t);
+            item.transform.localScale = originalScale * scale;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        item.transform.localScale = originalScale;
     }
 
     private void RotateItems(int direction)
@@ -308,55 +434,32 @@ public class BackpackUIController : MonoBehaviour
     private IEnumerator AnimateRotation(int direction)
     {
         isRotating = true;
-        leftArrow.interactable = false;
-        rightArrow.interactable = false;
+        SetButtonState(leftArrow, false);
+        SetButtonState(rightArrow, false);
+
+        yield return StartCoroutine(FadeText(itemTitle, 0f));
+        yield return StartCoroutine(FadeText(itemDescription, 0f));
+        inspectButton.interactable = false;
 
         int newIndex = (selectedIndex + direction + currentItems.Count) % currentItems.Count;
         float angleStep = 360f / currentItems.Count;
 
-        Dictionary<string, Vector3> startPositions = new();
-        foreach (string itemID in currentItems)
-        {
-            if (spawnedItems.ContainsKey(itemID))
-            {
-                startPositions[itemID] = spawnedItems[itemID].transform.localPosition;
-            }
-        }
+        float targetRotationAngle = currentRotationAngle + (angleStep * direction);
 
-        Dictionary<string, Vector3> targetPositions = new();
-        for (int i = 0; i < currentItems.Count; i++)
-        {
-            int newPositionIndex = (i - direction + currentItems.Count) % currentItems.Count;
-            targetPositions[currentItems[i]] = CalculateCircularPosition(newPositionIndex, angleStep);
-        }
+        Quaternion startRotation = itemContainer.localRotation;
+        Quaternion endRotation = Quaternion.Euler(0, targetRotationAngle, 0);
 
         float elapsed = 0;
         while (elapsed < rotationDuration)
         {
             float t = elapsed / rotationDuration;
-            foreach (string itemID in currentItems)
-            {
-                if (spawnedItems.ContainsKey(itemID))
-                {
-                    Transform itemTransform = spawnedItems[itemID].transform;
-                    itemTransform.localPosition = Vector3.Lerp(
-                        startPositions[itemID],
-                        targetPositions[itemID],
-                        t
-                    );
-                }
-            }
+            itemContainer.localRotation = Quaternion.Lerp(startRotation, endRotation, t);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        foreach (string itemID in currentItems)
-        {
-            if (spawnedItems.ContainsKey(itemID))
-            {
-                spawnedItems[itemID].transform.localPosition = targetPositions[itemID];
-            }
-        }
+        itemContainer.localRotation = endRotation;
+        currentRotationAngle = targetRotationAngle;
 
         selectedIndex = newIndex;
         foreach (var kvp in spawnedItems)
@@ -365,9 +468,32 @@ public class BackpackUIController : MonoBehaviour
         }
 
         UpdateSelectedItemUI();
+        yield return StartCoroutine(FadeText(itemTitle, 1f));
+        yield return StartCoroutine(FadeText(itemDescription, 1f));
+
         isRotating = false;
-        leftArrow.interactable = true;
-        rightArrow.interactable = true;
+        SetButtonState(leftArrow, true);
+        SetButtonState(rightArrow, true);
+    }
+
+    private IEnumerator FadeText(TextMeshProUGUI textElement, float targetAlpha)
+    {
+        float startAlpha = textElement.alpha;
+        float elapsed = 0;
+
+        while (elapsed < textFadeDuration)
+        {
+            textElement.alpha = Mathf.Lerp(startAlpha, targetAlpha, elapsed / textFadeDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        textElement.alpha = targetAlpha;
+
+        if (targetAlpha < 0.1f)
+        {
+            textElement.text = "";
+        }
     }
 
     private void EnterInspectionMode()
@@ -387,10 +513,12 @@ public class BackpackUIController : MonoBehaviour
         originalItemParent = currentInspectionItem.transform.parent;
 
         currentInspectionItem.transform.SetParent(itemContainer, true);
+        currentInspectionItem.transform.SetAsLastSibling();
 
         StartCoroutine(AnimateToInspection());
 
         inspectionOverlay.blocksRaycasts = true;
+        currentInspectionItem.transform.SetAsLastSibling();
         StartCoroutine(FadeInspectionOverlay(true));
     }
 
@@ -398,7 +526,8 @@ public class BackpackUIController : MonoBehaviour
     {
         Vector3 targetPosition = Vector3.forward * -2f;
         targetPosition.y = renderCamera.transform.position.y;
-        Quaternion targetRotation = Quaternion.Euler(defaultItemRotation);
+        Quaternion targetRotation = originalItemRotation;
+
 
         float elapsed = 0;
         while (elapsed < inspectionTransitionDuration)
@@ -425,6 +554,7 @@ public class BackpackUIController : MonoBehaviour
 
         currentInspectionItem.transform.SetLocalPositionAndRotation(targetPosition, targetRotation);
         currentInspectionItem.transform.localScale = inspectionScale;
+        currentInspectionItem.transform.SetAsLastSibling();
 
         foreach (var item in spawnedItems.Values)
         {
@@ -474,6 +604,8 @@ public class BackpackUIController : MonoBehaviour
         currentInspectionItem.transform.SetParent(originalItemParent, true);
         currentInspectionItem.transform.SetLocalPositionAndRotation(originalItemPosition, originalItemRotation);
         currentInspectionItem.transform.localScale = originalItemScale;
+
+        currentInspectionItem.transform.SetParent(originalItemParent, true);
 
         foreach (var kvp in spawnedItems)
         {

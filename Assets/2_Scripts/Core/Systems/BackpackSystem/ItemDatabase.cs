@@ -13,6 +13,7 @@ public class ItemDatabase : ScriptableObject
         public bool IsInspectable = true;
         public GameObject Prefab3D;
         public Sprite Icon;
+        public Vector3 DefaultRotation;
     }
 
     public List<ItemConfig> Items = new();
@@ -32,19 +33,22 @@ public class ItemDatabase : ScriptableObject
                 ItemID = "compass",
                 DisplayName = "Brass Compass",
                 Description = "A precision instrument for navigation. The needle trembles slightly.",
-                IsInspectable = true
+                IsInspectable = true,
+                DefaultRotation = new Vector3(0, -90, 0)
             },
             new() {
                 ItemID = "kerma_tablet",
                 DisplayName = "Kerma Stone Tablet",
                 Description = "Ancient stone etched with mysterious glyphs.",
-                IsInspectable = true
+                IsInspectable = true,
+                DefaultRotation = Vector3.zero
             },
             new() {
                 ItemID = "journal",
                 DisplayName = "Field Journal",
                 Description = "Eleanor's personal observations and sketches.",
-                IsInspectable = false
+                IsInspectable = false,
+                DefaultRotation = Vector3.zero
             }
         };
     }
