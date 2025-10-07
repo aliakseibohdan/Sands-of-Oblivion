@@ -42,6 +42,20 @@ public class BackpackUIController : MonoBehaviour
     [SerializeField] private Color overlayColor = new(0.1f, 0.1f, 0.1f, 0.8f);
     [SerializeField] private Material overlayMaterial;
 
+    [Header("Journal Settings")]
+    [SerializeField] private GameObject journalGameObject;
+    [SerializeField] private AnimationCurve journalEasingCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] private float journalAnimationDuration = 1f;
+    [SerializeField] private ParticleSystem journalParticleSystem;
+    private Coroutine journalAnimationCoroutine;
+    private bool isJournalOpen = false;
+
+    [Header("Map Settings")]
+    [SerializeField] private GameObject mapGameObject;
+    [SerializeField] private AnimationCurve mapEasingCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] private float mapAnimationDuration = 1f;
+    private Coroutine mapAnimationCoroutine;
+    private bool isMapOpen = false;
 
     [Header("References")]
     [SerializeField] private CanvasGroup backpackCanvas;
@@ -123,6 +137,22 @@ public class BackpackUIController : MonoBehaviour
             entryExit.callback.AddListener((data) => { OnButtonPointerExit(button); });
             trigger.triggers.Add(entryExit);
         }
+
+        if (journalGameObject != null)
+        {
+            Vector3 journalPos = journalGameObject.transform.localPosition;
+            journalPos.z = -1f;
+            journalGameObject.transform.localPosition = journalPos;
+            journalGameObject.SetActive(false);
+        }
+
+        if (mapGameObject != null)
+        {
+            Vector3 mapPos = mapGameObject.transform.localPosition;
+            mapPos.z = -1f;
+            mapGameObject.transform.localPosition = mapPos;
+            mapGameObject.SetActive(false);
+        }
     }
 
     private void OnButtonPointerEnter(Button button)
@@ -195,6 +225,18 @@ public class BackpackUIController : MonoBehaviour
             return;
         }
 
+        if (isJournalOpen && (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape)))
+        {
+            ToggleJournal();
+            return;
+        }
+
+        if (isMapOpen && (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape)))
+        {
+            ToggleMap();
+            return;
+        }
+
         if (backpackCanvas.blocksRaycasts && Input.GetMouseButtonDown(1))
         {
             ToggleBackpack();
@@ -217,6 +259,145 @@ public class BackpackUIController : MonoBehaviour
         }
     }
 
+    public void ToggleJournal()
+    {
+        if (journalGameObject == null) return;
+
+        if (isJournalOpen)
+        {
+            CloseJournal();
+        }
+        else
+        {
+            if (isMapOpen)
+            {
+                ToggleMap();
+            }
+            OpenJournal();
+        }
+    }
+
+    private void OpenJournal()
+    {
+        if (journalAnimationCoroutine != null)
+            StopCoroutine(journalAnimationCoroutine);
+
+        journalGameObject.SetActive(true);
+        isJournalOpen = true;
+        journalAnimationCoroutine = StartCoroutine(AnimateJournal(true));
+    }
+
+    private void CloseJournal()
+    {
+        if (journalAnimationCoroutine != null)
+            StopCoroutine(journalAnimationCoroutine);
+
+        journalAnimationCoroutine = StartCoroutine(AnimateJournal(false));
+    }
+
+    private IEnumerator AnimateJournal(bool opening)
+    {
+        Vector3 startPos = journalGameObject.transform.localPosition;
+        Vector3 targetPos = opening ? new Vector3(startPos.x, startPos.y, 0f) : new Vector3(startPos.x, startPos.y, -1f);
+
+        if (journalParticleSystem != null && opening)
+        {
+            journalParticleSystem.Stop();
+        }
+
+        float elapsed = 0f;
+
+        while (elapsed < journalAnimationDuration)
+        {
+            float t = elapsed / journalAnimationDuration;
+            float easedT = journalEasingCurve.Evaluate(t);
+
+            journalGameObject.transform.localPosition = Vector3.Lerp(startPos, targetPos, easedT);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        journalGameObject.transform.localPosition = targetPos;
+
+        if (opening)
+        {
+            if (journalParticleSystem != null)
+            {
+                journalParticleSystem.Play();
+            }
+        }
+        else
+        {
+            isJournalOpen = false;
+            journalGameObject.SetActive(false);
+        }
+
+        journalAnimationCoroutine = null;
+    }
+
+    public void ToggleMap()
+    {
+        if (mapGameObject == null) return;
+
+        if (isMapOpen)
+        {
+            CloseMap();
+        }
+        else
+        {
+            if (isJournalOpen)
+            {
+                ToggleJournal();
+            }
+            OpenMap();
+        }
+    }
+
+    private void OpenMap()
+    {
+        if (mapAnimationCoroutine != null)
+            StopCoroutine(mapAnimationCoroutine);
+
+        mapGameObject.SetActive(true);
+        isMapOpen = true;
+        mapAnimationCoroutine = StartCoroutine(AnimateMap(true));
+    }
+
+    private void CloseMap()
+    {
+        if (mapAnimationCoroutine != null)
+            StopCoroutine(mapAnimationCoroutine);
+
+        mapAnimationCoroutine = StartCoroutine(AnimateMap(false));
+    }
+
+    private IEnumerator AnimateMap(bool opening)
+    {
+        Vector3 startPos = mapGameObject.transform.localPosition;
+        Vector3 targetPos = opening ? new Vector3(startPos.x, startPos.y, 0f) : new Vector3(startPos.x, startPos.y, -1f);
+
+        float elapsed = 0f;
+
+        while (elapsed < mapAnimationDuration)
+        {
+            float t = elapsed / mapAnimationDuration;
+            float easedT = mapEasingCurve.Evaluate(t);
+
+            mapGameObject.transform.localPosition = Vector3.Lerp(startPos, targetPos, easedT);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        mapGameObject.transform.localPosition = targetPos;
+
+        if (!opening)
+        {
+            isMapOpen = false;
+            mapGameObject.SetActive(false);
+        }
+
+        mapAnimationCoroutine = null;
+    }
 
     private void CreateRenderCamera()
     {
@@ -527,7 +708,6 @@ public class BackpackUIController : MonoBehaviour
         Vector3 targetPosition = Vector3.forward * -2f;
         targetPosition.y = renderCamera.transform.position.y;
         Quaternion targetRotation = originalItemRotation;
-
 
         float elapsed = 0;
         while (elapsed < inspectionTransitionDuration)
